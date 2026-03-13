@@ -498,6 +498,16 @@
             pointer-events: none;
         }
         
+        /* 大泡泡字号放大2倍 */
+        .bubble.size-large .bubble-label {
+            font-size: clamp(24px, 6vmin, 36px);
+        }
+        
+        /* 中泡泡字号放大1.5倍 */
+        .bubble.size-medium .bubble-label {
+            font-size: clamp(18px, 4.5vmin, 27px);
+        }
+        
         /* 泡泡展开 */
         .bubble.expanded {
             transform: scale(1.1);
