@@ -1,0 +1,1702 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>任务泡泡 - ADHD 友好任务工具</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --bg-color: #e8f4f8;
+            --bg-gradient: radial-gradient(ellipse at 30% 20%, #f5fafc 0%, #e8f4f8 50%, #dceef5 100%);
+            --text-color: #5a6a7a;
+        }
+        
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background: var(--bg-gradient);
+            position: relative;
+            transition: background 0.8s ease;
+        }
+        
+        body.blank-moment {
+            background: radial-gradient(circle, #fff 0%, #f8fcff 100%);
+        }
+        
+        /* 背景装饰 */
+        .bg-decoration {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+        
+        .bg-circle {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.25;
+        }
+        
+        .bg-circle-1 {
+            width: 60vw;
+            height: 60vw;
+            background: linear-gradient(135deg, #d4f1e4 0%, #c5e8f0 100%);
+            top: -25%;
+            right: -15%;
+            animation: bgFloat1 25s ease-in-out infinite;
+        }
+        
+        .bg-circle-2 {
+            width: 50vw;
+            height: 50vw;
+            background: linear-gradient(135deg, #f5e6e8 0%, #f0e8e0 100%);
+            bottom: -20%;
+            left: -15%;
+            animation: bgFloat2 30s ease-in-out infinite;
+        }
+        
+        @keyframes bgFloat1 {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(-40px, 30px); }
+        }
+        
+        @keyframes bgFloat2 {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(40px, -30px); }
+        }
+        
+        /* 添加按钮 */
+        .add-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: linear-gradient(145deg, #7bc96f, #5a9c4a);
+            border: none;
+            cursor: pointer;
+            font-size: 34px;
+            color: white;
+            box-shadow: 
+                0 6px 20px rgba(90, 156, 74, 0.35),
+                inset 0 2px 4px rgba(255, 255, 255, 0.3);
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .add-btn:hover {
+            transform: scale(1.12);
+            box-shadow: 
+                0 10px 30px rgba(90, 156, 74, 0.45),
+                inset 0 2px 4px rgba(255, 255, 255, 0.3);
+        }
+        
+        .add-btn:active {
+            transform: scale(0.95);
+        }
+        
+        .add-btn:disabled {
+            background: linear-gradient(145deg, #ccc, #aaa);
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+        
+        /* 模态框 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.2);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+            backdrop-filter: blur(6px);
+        }
+        
+        .modal-overlay.active {
+            display: flex;
+            animation: fadeIn 0.2s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .modal {
+            background: rgba(255, 255, 255, 0.92);
+            border-radius: 28px;
+            padding: 36px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 
+                0 20px 60px rgba(0, 0, 0, 0.1),
+                0 0 0 1px rgba(255, 255, 255, 0.6) inset;
+            transform: scale(0.9) translateY(20px);
+            opacity: 0;
+            transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        
+        .modal-overlay.active .modal {
+            transform: scale(1) translateY(0);
+            opacity: 1;
+        }
+        
+        .modal h2 {
+            color: var(--text-color);
+            margin-bottom: 28px;
+            font-weight: 500;
+            font-size: 23px;
+            text-align: center;
+            letter-spacing: 3px;
+        }
+        
+        .modal-input {
+            width: 100%;
+            padding: 16px 22px;
+            border: 2px solid #e5eaef;
+            border-radius: 14px;
+            font-size: 19px;
+            font-family: inherit;
+            margin-bottom: 24px;
+            transition: all 0.3s ease;
+            outline: none;
+            background: rgba(250, 252, 255, 0.8);
+        }
+        
+        .modal-input:focus {
+            border-color: #7bc96f;
+            background: white;
+            box-shadow: 0 0 0 4px rgba(123, 201, 111, 0.12);
+        }
+        
+        .modal-input::placeholder {
+            color: #b0b8c2;
+        }
+        
+        .size-selector {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-bottom: 32px;
+        }
+        
+        .size-option {
+            flex: 1;
+            padding: 18px 10px;
+            border: 2px solid #e8ecf0;
+            border-radius: 18px;
+            background: rgba(255, 255, 255, 0.6);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+        
+        .size-option:hover {
+            border-color: #7bc96f;
+            background: rgba(123, 201, 111, 0.06);
+            transform: translateY(-2px);
+        }
+        
+        .size-option.selected {
+            border-color: #7bc96f;
+            background: rgba(123, 201, 111, 0.12);
+        }
+        
+        .size-option .icon {
+            display: block;
+            margin-bottom: 6px;
+        }
+        
+        .size-option .icon::before {
+            content: '';
+            display: block;
+            margin: 0 auto;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(230,245,255,0.7) 50%, rgba(220,240,255,0.5) 100%);
+            box-shadow: 
+                inset -2px -2px 6px rgba(0,0,0,0.03),
+                inset 2px 2px 6px rgba(255,255,255,0.9),
+                0 3px 10px rgba(0,0,0,0.06);
+        }
+        
+        .size-option[data-size="small"] .icon::before {
+            width: 38px;
+            height: 38px;
+        }
+        
+        .size-option[data-size="medium"] .icon::before {
+            width: 52px;
+            height: 52px;
+        }
+        
+        .size-option[data-size="large"] .icon::before {
+            width: 68px;
+            height: 68px;
+        }
+        
+        .size-option .label {
+            font-size: 15px;
+            color: var(--text-color);
+            font-weight: 500;
+        }
+        
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+        }
+        
+        .modal-btn {
+            flex: 1;
+            padding: 14px 22px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+        
+        .modal-btn.cancel {
+            background: linear-gradient(145deg, #f3f5f8, #e8ecf0);
+            color: #8894a0;
+        }
+        
+        .modal-btn.cancel:hover {
+            background: linear-gradient(145deg, #e8ecf0, #dfe4ea);
+        }
+        
+        .modal-btn.confirm {
+            background: linear-gradient(145deg, #7bc96f, #5a9c4a);
+            color: white;
+            box-shadow: 0 4px 12px rgba(90, 156, 74, 0.35);
+        }
+        
+        .modal-btn.confirm:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(90, 156, 74, 0.45);
+        }
+        
+        /* 透明彩虹泡泡样式 - 任务泡泡 */
+        .bubble {
+            position: absolute;
+            border-radius: 50%;
+            cursor: grab;
+            user-select: none;
+            z-index: 10;
+            animation: taskBubbleFloat var(--float-duration, 20s) ease-in-out infinite;
+            animation-delay: var(--float-delay, 0s);
+        }
+        
+        .bubble:active {
+            cursor: grabbing;
+        }
+        
+        .bubble.dragging {
+            animation: none !important;
+            z-index: 50;
+            transform: scale(1.05) !important;
+        }
+        
+        /* 泡泡尺寸 */
+        .bubble.size-small {
+            width: 14vmin;
+            height: 14vmin;
+            min-width: 55px;
+            min-height: 55px;
+        }
+        
+        .bubble.size-medium {
+            width: 20vmin;
+            height: 20vmin;
+            min-width: 85px;
+            min-height: 85px;
+        }
+        
+        .bubble.size-large {
+            width: 28vmin;
+            height: 28vmin;
+            min-width: 130px;
+            min-height: 130px;
+            max-width: 250px;
+            max-height: 250px;
+        }
+        
+        /* 泡泡基础 */
+        .bubble::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: 50%;
+            background: linear-gradient(
+                135deg,
+                rgba(255, 255, 255, 0.4) 0%,
+                rgba(248, 250, 255, 0.25) 50%,
+                rgba(245, 248, 255, 0.2) 100%
+            );
+            backdrop-filter: blur(1px);
+        }
+        
+        /* 泡泡边缘 */
+        .bubble .bubble-border {
+            position: absolute;
+            top: -1px;
+            left: -1px;
+            right: -1px;
+            bottom: -1px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.35);
+            pointer-events: none;
+        }
+        
+        /* 主高光 */
+        .bubble .bubble-highlight-main {
+            position: absolute;
+            top: 5%;
+            left: 10%;
+            width: 45%;
+            height: 38%;
+            border-radius: 50%;
+            background: linear-gradient(
+                145deg,
+                rgba(255, 255, 255, 0.9) 0%,
+                rgba(255, 255, 255, 0.6) 40%,
+                rgba(255, 255, 255, 0.15) 70%,
+                transparent 100%
+            );
+            transform: rotate(-20deg);
+            pointer-events: none;
+        }
+        
+        /* 小高光点 */
+        .bubble .bubble-highlight-sub {
+            position: absolute;
+            top: 15%;
+            left: 20%;
+            width: 16%;
+            height: 12%;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.8);
+            transform: rotate(-20deg);
+            pointer-events: none;
+        }
+        
+        /* 彩虹炫光层 */
+        .bubble .bubble-shine {
+            position: absolute;
+            top: -10%;
+            left: -10%;
+            right: -10%;
+            bottom: -10%;
+            border-radius: 50%;
+            background: conic-gradient(
+                from 0deg,
+                rgba(255, 200, 220, 0.15) 0deg,
+                rgba(220, 240, 255, 0.12) 60deg,
+                rgba(230, 255, 240, 0.12) 120deg,
+                rgba(255, 245, 220, 0.12) 180deg,
+                rgba(245, 230, 255, 0.12) 240deg,
+                rgba(255, 235, 225, 0.15) 300deg,
+                rgba(255, 200, 220, 0.15) 360deg
+            );
+            pointer-events: none;
+            animation: rainbowShimmer 8s linear infinite;
+            mix-blend-mode: screen;
+        }
+        
+        @keyframes rainbowShimmer {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        /* 底部反射 */
+        .bubble .bubble-reflection {
+            position: absolute;
+            bottom: 8%;
+            left: 20%;
+            width: 55%;
+            height: 28%;
+            border-radius: 50%;
+            background: radial-gradient(
+                ellipse at center,
+                rgba(255, 255, 255, 0.35) 0%,
+                rgba(255, 255, 255, 0.1) 50%,
+                transparent 75%
+            );
+            pointer-events: none;
+        }
+        
+        /* 任务泡泡颜色 */
+        .bubble.rose {
+            background: linear-gradient(145deg, rgba(255, 230, 235, 0.25) 0%, rgba(255, 220, 230, 0.18) 50%, rgba(255, 210, 225, 0.12) 100%);
+            box-shadow: 0 0 40px rgba(255, 200, 220, 0.2), 0 8px 25px rgba(255, 180, 200, 0.12), inset 0 -8px 25px rgba(255, 150, 180, 0.08);
+        }
+        .bubble.sky {
+            background: linear-gradient(145deg, rgba(220, 240, 255, 0.25) 0%, rgba(200, 235, 255, 0.18) 50%, rgba(180, 225, 250, 0.12) 100%);
+            box-shadow: 0 0 40px rgba(200, 230, 255, 0.2), 0 8px 25px rgba(180, 220, 250, 0.12), inset 0 -8px 25px rgba(140, 200, 240, 0.08);
+        }
+        .bubble.mint {
+            background: linear-gradient(145deg, rgba(220, 250, 235, 0.25) 0%, rgba(200, 245, 225, 0.18) 50%, rgba(180, 240, 215, 0.12) 100%);
+            box-shadow: 0 0 40px rgba(200, 250, 220, 0.2), 0 8px 25px rgba(180, 240, 200, 0.12), inset 0 -8px 25px rgba(140, 220, 180, 0.08);
+        }
+        .bubble.lavender {
+            background: linear-gradient(145deg, rgba(235, 225, 255, 0.25) 0%, rgba(225, 215, 250, 0.18) 50%, rgba(210, 200, 245, 0.12) 100%);
+            box-shadow: 0 0 40px rgba(225, 215, 255, 0.2), 0 8px 25px rgba(210, 200, 250, 0.12), inset 0 -8px 25px rgba(180, 160, 230, 0.08);
+        }
+        .bubble.peach {
+            background: linear-gradient(145deg, rgba(255, 240, 225, 0.25) 0%, rgba(255, 230, 210, 0.18) 50%, rgba(255, 220, 195, 0.12) 100%);
+            box-shadow: 0 0 40px rgba(255, 230, 210, 0.2), 0 8px 25px rgba(255, 210, 180, 0.12), inset 0 -8px 25px rgba(255, 180, 140, 0.08);
+        }
+        .bubble.lemon {
+            background: linear-gradient(145deg, rgba(255, 250, 220, 0.25) 0%, rgba(255, 245, 205, 0.18) 50%, rgba(255, 240, 190, 0.12) 100%);
+            box-shadow: 0 0 40px rgba(255, 250, 200, 0.2), 0 8px 25px rgba(255, 240, 170, 0.12), inset 0 -8px 25px rgba(255, 220, 120, 0.08);
+        }
+        
+        /* 泡泡标签 */
+        .bubble .bubble-label {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #5a6572;
+            font-weight: 600;
+            font-size: clamp(12px, 3vmin, 18px);
+            max-width: 65%;
+            text-align: center;
+            line-height: 1.35;
+            text-shadow: 0 1px 3px rgba(255, 255, 255, 0.95), 0 0 12px rgba(255, 255, 255, 0.6);
+            z-index: 5;
+            pointer-events: none;
+        }
+        
+        /* 泡泡展开 */
+        .bubble.expanded {
+            transform: scale(1.1);
+            z-index: 40;
+        }
+        
+        .bubble .bubble-options {
+            position: absolute;
+            bottom: -50px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: none;
+            gap: 8px;
+            white-space: nowrap;
+            z-index: 10;
+        }
+        
+        .bubble.expanded .bubble-options {
+            display: flex;
+            animation: slideUp 0.2s ease;
+        }
+        
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateX(-50%) translateY(8px); }
+            to { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+        
+        .bubble-option-btn {
+            padding: 9px 16px;
+            border: none;
+            border-radius: 22px;
+            font-size: 12px;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .bubble-option-btn.complete-btn {
+            background: linear-gradient(145deg, #8ed88e, #6bc96b);
+            color: white;
+        }
+        .bubble-option-btn.complete-btn:hover {
+            background: linear-gradient(145deg, #6bc96b, #54b054);
+            transform: scale(1.04);
+        }
+        .bubble-option-btn.delete-btn {
+            background: linear-gradient(145deg, #f08888, #e06060);
+            color: white;
+        }
+        .bubble-option-btn.delete-btn:hover {
+            background: linear-gradient(145deg, #e06060, #cc4444);
+            transform: scale(1.04);
+        }
+        
+        /* 任务泡泡浮动动画 - 轻微 */
+        @keyframes taskBubbleFloat {
+            0%, 100% { transform: translate(0, 0) rotate(0deg) scale(1); }
+            15% { transform: translate(14px, -10px) rotate(0.8deg) scale(1.01); }
+            30% { transform: translate(-8px, -20px) rotate(-0.6deg) scale(0.99); }
+            45% { transform: translate(18px, 8px) rotate(1.2deg) scale(1.008); }
+            60% { transform: translate(-14px, 18px) rotate(-0.8deg) scale(0.996); }
+            75% { transform: translate(10px, -6px) rotate(0.4deg) scale(1.004); }
+        }
+        
+        /* 破裂动画 */
+        @keyframes pop {
+            0% { transform: scale(1); opacity: 1; }
+            20% { transform: scale(1.6); opacity: 0.6; }
+            50% { transform: scale(1.9); opacity: 0.25; }
+            100% { transform: scale(2.3); opacity: 0; }
+        }
+        
+        @keyframes burstRing {
+            0% { transform: scale(0.7); opacity: 1; border-width: 10px; }
+            100% { transform: scale(2.2); opacity: 0; border-width: 0; }
+        }
+        
+        .bubble.popping {
+            animation: pop 0.35s ease-out forwards;
+            pointer-events: none;
+        }
+        
+        .burst-ring {
+            position: absolute;
+            border-radius: 50%;
+            border: 8px solid rgba(255, 255, 255, 0.85);
+            pointer-events: none;
+            z-index: 60;
+            animation: burstRing 0.4s ease-out forwards;
+        }
+        
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 60;
+        }
+        
+        /* 封面泡泡 - 装饰性背景泡泡 */
+        .cover-bubble {
+            position: absolute;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 1;
+            animation: coverBubbleFloat var(--cover-duration, 25s) ease-in-out infinite;
+            animation-delay: var(--cover-delay, 0s);
+        }
+        
+        /* 封面泡泡尺寸 */
+        .cover-bubble.size-small { width: 50px; height: 50px; }
+        .cover-bubble.size-medium { width: 70px; height: 70px; }
+        .cover-bubble.size-large { width: 90px; height: 90px; }
+        
+        /* 封面泡泡样式 */
+        .cover-bubble::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(255,255,255,0.35) 0%, rgba(248,250,255,0.2) 100%);
+        }
+        
+        .cover-bubble .cover-highlight {
+            position: absolute;
+            top: 8%;
+            left: 12%;
+            width: 40%;
+            height: 32%;
+            border-radius: 50%;
+            background: linear-gradient(145deg, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0.4) 60%, transparent 100%);
+            transform: rotate(-20deg);
+        }
+        
+        .cover-bubble .cover-shine {
+            position: absolute;
+            top: -5%; left: -5%; right: -5%; bottom: -5%;
+            border-radius: 50%;
+            background: conic-gradient(from 0deg, rgba(255,200,220,0.1) 0deg, rgba(220,240,255,0.08) 120deg, rgba(230,255,240,0.08) 240deg, rgba(255,200,220,0.1) 360deg);
+            animation: rainbowShimmer 10s linear infinite;
+            mix-blend-mode: screen;
+        }
+        
+        /* 封面泡泡颜色 */
+        .cover-bubble.rose { background: linear-gradient(145deg, rgba(255,210,225,0.2), rgba(255,190,210,0.1)); box-shadow: 0 0 30px rgba(255,200,220,0.15); }
+        .cover-bubble.sky { background: linear-gradient(145deg, rgba(200,230,255,0.2), rgba(180,215,250,0.1)); box-shadow: 0 0 30px rgba(200,230,255,0.15); }
+        .cover-bubble.mint { background: linear-gradient(145deg, rgba(200,245,220,0.2), rgba(180,235,200,0.1)); box-shadow: 0 0 30px rgba(200,250,220,0.15); }
+        .cover-bubble.lavender { background: linear-gradient(145deg, rgba(225,215,255,0.2), rgba(210,195,250,0.1)); box-shadow: 0 0 30px rgba(225,215,255,0.15); }
+        .cover-bubble.peach { background: linear-gradient(145deg, rgba(255,230,210,0.2), rgba(255,210,190,0.1)); box-shadow: 0 0 30px rgba(255,230,210,0.15); }
+        .cover-bubble.lemon { background: linear-gradient(145deg, rgba(255,245,205,0.2), rgba(255,235,180,0.1)); box-shadow: 0 0 30px rgba(255,250,200,0.15); }
+        
+        /* 封面泡泡动画 - 更缓慢更大范围 */
+        @keyframes coverBubbleFloat {
+            0%, 100% { transform: translate(0, 0) rotate(0deg) scale(1); }
+            20% { transform: translate(60px, -45px) rotate(5deg) scale(1.05); }
+            40% { transform: translate(-35px, -80px) rotate(-4deg) scale(0.95); }
+            60% { transform: translate(75px, 35px) rotate(6deg) scale(1.03); }
+            80% { transform: translate(-55px, 70px) rotate(-5deg) scale(0.98); }
+        }
+        
+        /* 计数 */
+        .bubble-count {
+            position: fixed;
+            top: 22px;
+            left: 22px;
+            background: rgba(255, 255, 255, 0.85);
+            padding: 12px 20px;
+            border-radius: 28px;
+            font-size: 14px;
+            color: #5a6a7a;
+            box-shadow: 0 3px 15px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(255, 255, 255, 0.7) inset;
+            z-index: 100;
+            backdrop-filter: blur(8px);
+        }
+        
+        .bubble-count span {
+            color: #5a9c4a;
+            font-weight: 600;
+            font-size: 18px;
+        }
+        
+        /* 设置面板 */
+        .settings-btn {
+            position: fixed;
+            top: 22px;
+            right: 22px;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.85);
+            border: none;
+            cursor: pointer;
+            font-size: 20px;
+            box-shadow: 0 3px 15px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(255, 255, 255, 0.7) inset;
+            transition: all 0.3s ease;
+            z-index: 100;
+            backdrop-filter: blur(8px);
+        }
+        
+        .settings-btn:hover { transform: rotate(40deg); }
+        
+        .settings-panel {
+            position: fixed;
+            top: 74px;
+            right: 22px;
+            background: rgba(255, 255, 255, 0.92);
+            border-radius: 18px;
+            padding: 22px;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(255, 255, 255, 0.6) inset;
+            z-index: 101;
+            display: none;
+            min-width: 200px;
+            backdrop-filter: blur(12px);
+        }
+        
+        .settings-panel.active { display: block; animation: slideIn 0.2s ease; }
+        
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .settings-panel h3 { font-size: 16px; margin-bottom: 18px; color: var(--text-color); font-weight: 500; }
+        
+        .settings-option {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 0;
+        }
+        
+        .settings-option label { font-size: 14px; color: #7a8896; }
+        
+        .toggle {
+            width: 48px;
+            height: 26px;
+            background: linear-gradient(145deg, #d5dce2, #c5ccd2);
+            border-radius: 13px;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .toggle.active { background: linear-gradient(145deg, #7bc96f, #5a9c4a); }
+        
+        .toggle::after {
+            content: '';
+            position: absolute;
+            width: 22px;
+            height: 22px;
+            background: white;
+            border-radius: 50%;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.3s ease;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+        }
+        
+        .toggle.active::after { transform: translateX(22px); }
+        
+        /* 空状态 */
+        .empty-hint {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: #b0b8c2;
+            font-size: 18px;
+            z-index: 1;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+        }
+        
+        .empty-hint.hidden { opacity: 0; }
+        
+        .empty-hint .hint-text { margin-top: 20px; }
+        
+        /* Toast */
+        .toast {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.85);
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 18px 28px;
+            border-radius: 14px;
+            font-size: 15px;
+            z-index: 300;
+            opacity: 0;
+            transition: all 0.3s ease;
+            pointer-events: none;
+        }
+        
+        .toast.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        
+        /* 教程指引 */
+        .tutorial-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            z-index: 250;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(3px);
+        }
+        
+        .tutorial-overlay.active {
+            display: flex;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .tutorial-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 24px;
+            padding: 32px;
+            max-width: 340px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+            animation: tutorialPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        
+        @keyframes tutorialPop {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        
+        .tutorial-icon {
+            font-size: 52px;
+            margin-bottom: 16px;
+            display: block;
+        }
+        
+        .tutorial-card h3 {
+            color: var(--text-color);
+            font-size: 20px;
+            margin-bottom: 12px;
+            font-weight: 500;
+        }
+        
+        .tutorial-card p {
+            color: #7a8896;
+            font-size: 15px;
+            line-height: 1.6;
+            margin-bottom: 24px;
+        }
+        
+        .tutorial-btn {
+            padding: 12px 32px;
+            border: none;
+            border-radius: 25px;
+            font-size: 15px;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+        
+        .tutorial-btn.primary {
+            background: linear-gradient(145deg, #7bc96f, #5a9c4a);
+            color: white;
+            box-shadow: 0 4px 15px rgba(90, 156, 74, 0.35);
+        }
+        
+        .tutorial-btn.primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(90, 156, 74, 0.45);
+        }
+        
+        .tutorial-btn.secondary {
+            background: linear-gradient(145deg, #f3f5f8, #e8ecf0);
+            color: #8894a0;
+            margin-left: 10px;
+        }
+        
+        .tutorial-btn.secondary:hover {
+            background: linear-gradient(145deg, #e8ecf0, #dfe4ea);
+        }
+        
+        /* 教程高亮提示 */
+        .tutorial-highlight {
+            position: absolute;
+            border: 3px dashed #7bc96f;
+            border-radius: 16px;
+            pointer-events: none;
+            z-index: 90;
+            animation: highlightPulse 1.5s ease-in-out infinite;
+        }
+        
+        @keyframes highlightPulse {
+            0%, 100% { opacity: 0.6; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.02); }
+        }
+        
+        .tutorial-highlight::after {
+            content: attr(data-tip);
+            position: absolute;
+            top: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(90, 156, 74, 0.9);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            white-space: nowrap;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        /* 教程步骤指示 */
+        .tutorial-step {
+            position: fixed;
+            bottom: 110px;
+            right: 30px;
+            display: flex;
+            gap: 8px;
+            z-index: 100;
+        }
+        
+        .tutorial-step-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.5);
+            border: 2px solid rgba(90, 156, 74, 0.5);
+            transition: all 0.3s ease;
+        }
+        
+        .tutorial-step-dot.active {
+            background: #7bc96f;
+            border-color: #7bc96f;
+            transform: scale(1.2);
+        }
+    </style>
+</head>
+<body>
+    <!-- 背景 -->
+    <div class="bg-decoration">
+        <div class="bg-circle bg-circle-1"></div>
+        <div class="bg-circle bg-circle-2"></div>
+    </div>
+    
+    <!-- 封面泡泡容器 -->
+    <div id="coverBubbles"></div>
+    
+    <!-- 计数 -->
+    <div class="bubble-count">泡泡: <span id="count">0</span> / 5</div>
+    
+    <!-- 空状态提示 -->
+    <div class="empty-hint" id="emptyHint">
+        <div class="hint-text">点击右下角 + 添加任务泡泡</div>
+    </div>
+    
+    <!-- 设置按钮 -->
+    <button class="settings-btn" id="settingsBtn">⚙</button>
+    
+    <!-- 设置面板 -->
+    <div class="settings-panel" id="settingsPanel">
+        <h3>设置</h3>
+        <div class="settings-option">
+            <label>完成音效</label>
+            <div class="toggle active" id="soundToggle"></div>
+        </div>
+    </div>
+    
+    <!-- 添加按钮 -->
+    <button class="add-btn" id="addBtn">+</button>
+    
+    <!-- 创建模态框 -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal">
+            <h2>创建新泡泡</h2>
+            <input type="text" class="modal-input" id="taskInput" placeholder="输入任务标签（≤5字）" maxlength="5">
+            <div class="size-selector">
+                <div class="size-option" data-size="small"><span class="icon"></span><span class="label">小</span></div>
+                <div class="size-option selected" data-size="medium"><span class="icon"></span><span class="label">中</span></div>
+                <div class="size-option" data-size="large"><span class="icon"></span><span class="label">大</span></div>
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-btn cancel" id="cancelBtn">取消</button>
+                <button class="modal-btn confirm" id="confirmBtn">创建</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 教程覆盖层 -->
+    <div class="tutorial-overlay" id="tutorialOverlay">
+        <div class="tutorial-card">
+            <span class="tutorial-icon" id="tutorialIcon">🎈</span>
+            <h3 id="tutorialTitle">欢迎使用任务泡泡</h3>
+            <p id="tutorialText">这是一个轻松有趣的任务管理工具，点击按钮开始创建你的第一个任务泡泡吧！</p>
+            <div>
+                <button class="tutorial-btn primary" id="tutorialPrimaryBtn">开始体验</button>
+                <button class="tutorial-btn secondary" id="tutorialSkipBtn">跳过</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 教程高亮 -->
+    <div class="tutorial-highlight" id="tutorialHighlight" style="display: none;"></div>
+    
+    <!-- 教程步骤 -->
+    <div class="tutorial-step" id="tutorialStep" style="display: none;">
+        <div class="tutorial-step-dot active"></div>
+        <div class="tutorial-step-dot"></div>
+    </div>
+    
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+    
+    <script>
+        // 状态
+        const state = {
+            bubbles: [],
+            selectedSize: 'medium',
+            soundEnabled: true,
+            maxBubbles: 5,
+            isDragging: false,
+            bubbleColors: ['rose', 'sky', 'mint', 'lavender', 'peach', 'lemon'],
+            tutorialComplete: false,
+            tutorialStep: 0
+        };
+        
+        // DOM
+        const elements = {
+            addBtn: document.getElementById('addBtn'),
+            modalOverlay: document.getElementById('modalOverlay'),
+            taskInput: document.getElementById('taskInput'),
+            sizeOptions: document.querySelectorAll('.size-option'),
+            cancelBtn: document.getElementById('cancelBtn'),
+            confirmBtn: document.getElementById('confirmBtn'),
+            countDisplay: document.getElementById('count'),
+            emptyHint: document.getElementById('emptyHint'),
+            settingsBtn: document.getElementById('settingsBtn'),
+            settingsPanel: document.getElementById('settingsPanel'),
+            soundToggle: document.getElementById('soundToggle'),
+            toast: document.getElementById('toast'),
+            coverBubbles: document.getElementById('coverBubbles'),
+            tutorialOverlay: document.getElementById('tutorialOverlay'),
+            tutorialIcon: document.getElementById('tutorialIcon'),
+            tutorialTitle: document.getElementById('tutorialTitle'),
+            tutorialText: document.getElementById('tutorialText'),
+            tutorialPrimaryBtn: document.getElementById('tutorialPrimaryBtn'),
+            tutorialSkipBtn: document.getElementById('tutorialSkipBtn'),
+            tutorialHighlight: document.getElementById('tutorialHighlight'),
+            tutorialStep: document.getElementById('tutorialStep')
+        };
+        
+        function generateId() {
+            return 'bubble_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        }
+        
+        function getBubbleSizePx(size) {
+            const vmin = Math.min(window.innerWidth, window.innerHeight) / 100;
+            const sizes = { small: 14, medium: 20, large: 28 };
+            const minSizes = { small: 55, medium: 85, large: 130 };
+            const maxSizes = { small: 80, medium: 140, large: 250 };
+            let sizePx = sizes[size] * vmin;
+            return Math.max(minSizes[size], Math.min(maxSizes[size], sizePx));
+        }
+        
+        function showToast(msg) {
+            elements.toast.textContent = msg;
+            elements.toast.classList.add('show');
+            setTimeout(() => elements.toast.classList.remove('show'), 2200);
+        }
+        
+        function updateCount() {
+            const count = state.bubbles.length;
+            elements.countDisplay.textContent = count;
+            elements.addBtn.disabled = count >= state.maxBubbles;
+            elements.emptyHint.classList.toggle('hidden', count > 0);
+            
+            // 根据是否有任务泡泡来显示/隐藏封面泡泡
+            updateCoverBubbles(count > 0);
+        }
+        
+        // 封面泡泡系统
+        let coverBubbleElements = [];
+        
+        function getRandomCoverPosition() {
+            const padding = 80;
+            const sizes = ['size-small', 'size-medium', 'size-large'];
+            const sizeName = sizes[Math.floor(Math.random() * sizes.length)];
+            const sizesMap = { 'size-small': 50, 'size-medium': 70, 'size-large': 90 };
+            const size = sizesMap[sizeName];
+            
+            return {
+                x: padding + Math.random() * (window.innerWidth - size - padding * 2),
+                y: padding + Math.random() * (window.innerHeight - size - padding * 2),
+                size: sizeName
+            };
+        }
+        
+        function createCoverBubbles() {
+            elements.coverBubbles.innerHTML = '';
+            coverBubbleElements = [];
+            
+            const bubbleCount = 6;
+            const positions = [];
+            
+            for (let i = 0; i < bubbleCount; i++) {
+                let pos, attempts = 0;
+                do {
+                    pos = getRandomCoverPosition();
+                    attempts++;
+                } while (attempts < 50 && positions.some(p => {
+                    const pSize = parseInt(p.size.replace('size-', '').replace('small', '50').replace('medium', '70').replace('large', '90'));
+                    const cSize = parseInt(pos.size.replace('size-', '').replace('small', '50').replace('medium', '70').replace('large', '90'));
+                    return Math.abs(p.x - pos.x) < (pSize + cSize) / 2 + 30 && 
+                           Math.abs(p.y - pos.y) < (pSize + cSize) / 2 + 30;
+                }));
+                
+                positions.push(pos);
+                const color = state.bubbleColors[i % state.bubbleColors.length];
+                const duration = 20 + Math.random() * 10; // 20-30秒
+                const delay = -Math.random() * 25;
+                
+                const div = document.createElement('div');
+                div.className = `cover-bubble ${pos.size} ${color}`;
+                div.style.left = pos.x + 'px';
+                div.style.top = pos.y + 'px';
+                div.style.setProperty('--cover-duration', duration + 's');
+                div.style.setProperty('--cover-delay', delay + 's');
+                
+                div.innerHTML = `
+                    <div class="cover-highlight"></div>
+                    <div class="cover-shine"></div>
+                `;
+                
+                elements.coverBubbles.appendChild(div);
+                coverBubbleElements.push(div);
+            }
+        }
+        
+        function updateCoverBubbles(hasTasks) {
+            if (hasTasks) {
+                elements.coverBubbles.style.display = 'none';
+            } else {
+                elements.coverBubbles.style.display = 'block';
+                // 确保封面泡泡已创建
+                if (coverBubbleElements.length === 0) {
+                    createCoverBubbles();
+                }
+            }
+        }
+        
+        function getRandomPosition(size, minSize, maxSize) {
+            const vmin = Math.min(window.innerWidth, window.innerHeight) / 100;
+            let sizePx = size ? size * vmin : 80;
+            if (minSize && maxSize) {
+                sizePx = Math.max(minSize, Math.min(maxSize, sizePx));
+            }
+            
+            const padding = 90;
+            return {
+                x: padding + Math.random() * (window.innerWidth - sizePx - padding * 2),
+                y: padding + Math.random() * (window.innerHeight - sizePx - padding * 2)
+            };
+        }
+        
+        function checkOverlap(x, y, size) {
+            const sizePx = getBubbleSizePx(size);
+            const radius = sizePx / 2;
+            const padding = 30;
+            
+            for (const b of state.bubbles) {
+                const existingPx = getBubbleSizePx(b.size);
+                const existingRadius = existingPx / 2;
+                const dist = Math.sqrt((x - b.x) ** 2 + (y - b.y) ** 2);
+                if (dist < radius + existingRadius + padding) return true;
+            }
+            return false;
+        }
+        
+        function getTaskBubblePosition(size) {
+            const sizePx = getBubbleSizePx(size);
+            const padding = 90;
+            const maxAttempts = 80;
+            
+            for (let i = 0; i < maxAttempts; i++) {
+                const x = padding + Math.random() * (window.innerWidth - sizePx - padding * 2);
+                const y = padding + Math.random() * (window.innerHeight - sizePx - padding * 2);
+                if (!checkOverlap(x + sizePx / 2, y + sizePx / 2, size)) {
+                    return { x, y };
+                }
+            }
+            return {
+                x: padding + Math.random() * (window.innerWidth - sizePx - padding * 2),
+                y: padding + Math.random() * (window.innerHeight - sizePx - padding * 2)
+            };
+        }
+        
+        function getRandomColor() {
+            return state.bubbleColors[Math.floor(Math.random() * state.bubbleColors.length)];
+        }
+        
+        function getRandomFloatDuration() { return 15 + Math.random() * 10; }
+        function getRandomFloatDelay() { return -Math.random() * 15; }
+        
+        function createBubble(label, size, x, y, color, skipTutorial = false) {
+            if (state.bubbles.length >= state.maxBubbles) return;
+            
+            const id = generateId();
+            const pos = x !== undefined && y !== undefined ? { x, y } : getTaskBubblePosition(size);
+            const bubbleColor = color || getRandomColor();
+            
+            const bubble = { 
+                id, label, size, color: bubbleColor, 
+                x: pos.x, y: pos.y,
+                floatDuration: getRandomFloatDuration(),
+                floatDelay: getRandomFloatDelay()
+            };
+            
+            state.bubbles.push(bubble);
+            renderBubble(bubble);
+            updateCount();
+            saveToLocal();
+            
+            // 如果是教程模式创建的泡泡，触发下一步
+            if (!skipTutorial && state.tutorialStep === 1) {
+                setTimeout(() => startTutorialStep2(), 500);
+            }
+        }
+        
+        function renderBubble(bubble) {
+            const div = document.createElement('div');
+            div.className = `bubble size-${bubble.size} ${bubble.color}`;
+            div.id = bubble.id;
+            div.style.left = bubble.x + 'px';
+            div.style.top = bubble.y + 'px';
+            div.style.setProperty('--float-duration', bubble.floatDuration + 's');
+            div.style.setProperty('--float-delay', bubble.floatDelay + 's');
+            
+            div.innerHTML = `
+                <div class="bubble-border"></div>
+                <div class="bubble-highlight-main"></div>
+                <div class="bubble-highlight-sub"></div>
+                <div class="bubble-shine"></div>
+                <div class="bubble-reflection"></div>
+                <span class="bubble-label">${bubble.label}</span>
+                <div class="bubble-options">
+                    <button class="bubble-option-btn complete-btn" data-action="complete">完成</button>
+                    <button class="bubble-option-btn delete-btn" data-action="delete">删除</button>
+                </div>
+            `;
+            
+            div.addEventListener('click', (e) => {
+                if (state.isDragging) return;
+                if (e.target.classList.contains('bubble-option-btn')) return;
+                const wasExpanded = div.classList.contains('expanded');
+                document.querySelectorAll('.bubble.expanded').forEach(b => b.classList.remove('expanded'));
+                if (!wasExpanded) div.classList.add('expanded');
+            });
+            
+            div.addEventListener('dblclick', (e) => {
+                e.preventDefault();
+                completeBubble(div, bubble);
+            });
+            
+            div.addEventListener('mousedown', startDrag);
+            div.addEventListener('touchstart', handleTouchStart, { passive: false });
+            
+            div.querySelectorAll('.bubble-option-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (btn.dataset.action === 'complete') completeBubble(div, bubble);
+                    else deleteBubble(div, bubble);
+                });
+            });
+            
+            document.body.appendChild(div);
+        }
+        
+        let touchStartTime = 0, touchStartPos = { x: 0, y: 0 };
+        
+        function handleTouchStart(e) {
+            if (e.target.classList.contains('bubble-option-btn')) return;
+            const t = e.touches[0];
+            touchStartTime = Date.now();
+            touchStartPos = { x: t.clientX, y: t.clientY };
+        }
+        
+        document.addEventListener('touchend', (e) => {
+            if (!e.target.closest('.bubble')) return;
+            const t = e.changedTouches[0];
+            const dist = Math.sqrt((t.clientX - touchStartPos.x) ** 2 + (t.clientY - touchStartPos.y) ** 2);
+            if (dist < 10 && Date.now() - touchStartTime < 300) {
+                const div = e.target.closest('.bubble');
+                div.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
+            }
+        });
+        
+        function startDrag(e) {
+            if (e.target.classList.contains('bubble-option-btn')) return;
+            
+            const div = e.currentTarget;
+            const bubble = state.bubbles.find(b => b.id === div.id);
+            if (!bubble) return;
+            
+            state.isDragging = true;
+            
+            const rect = div.getBoundingClientRect();
+            const offsetX = e.clientX - rect.left;
+            const offsetY = e.clientY - rect.top;
+            
+            div.classList.add('dragging');
+            div.classList.remove('expanded');
+            
+            function onMove(e) {
+                let x = e.clientX - offsetX;
+                let y = e.clientY - offsetY;
+                const sizePx = getBubbleSizePx(bubble.size);
+                x = Math.max(0, Math.min(x, window.innerWidth - sizePx));
+                y = Math.max(0, Math.min(y, window.innerHeight - sizePx));
+                div.style.left = x + 'px';
+                div.style.top = y + 'px';
+                bubble.x = x;
+                bubble.y = y;
+            }
+            
+            function onUp() {
+                setTimeout(() => { state.isDragging = false; }, 50);
+                div.classList.remove('dragging');
+                document.removeEventListener('mousemove', onMove);
+                document.removeEventListener('mouseup', onUp);
+                saveToLocal();
+            }
+            
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onUp);
+        }
+        
+        function completeBubble(div, bubble, skipTutorial = false) {
+            div.classList.remove('expanded');
+            div.classList.add('popping');
+            
+            if (state.soundEnabled) playPopSound();
+            createBurstEffect(div, bubble);
+            
+            setTimeout(() => {
+                div.remove();
+                state.bubbles = state.bubbles.filter(b => b.id !== bubble.id);
+                updateCount();
+                saveToLocal();
+                document.body.classList.add('blank-moment');
+                setTimeout(() => document.body.classList.remove('blank-moment'), 350);
+                
+                // 教程模式完成
+                if (!skipTutorial && state.tutorialStep === 2) {
+                    finishTutorial();
+                }
+            }, 450);
+        }
+        
+        function deleteBubble(div, bubble) {
+            div.classList.add('popping');
+            setTimeout(() => {
+                div.remove();
+                state.bubbles = state.bubbles.filter(b => b.id !== bubble.id);
+                updateCount();
+                saveToLocal();
+            }, 280);
+        }
+        
+        function createBurstEffect(div, bubble) {
+            const rect = div.getBoundingClientRect();
+            const cx = rect.left + rect.width / 2;
+            const cy = rect.top + rect.height / 2;
+            const sz = rect.width;
+            
+            const ring = document.createElement('div');
+            ring.className = 'burst-ring';
+            ring.style.width = sz + 'px';
+            ring.style.height = sz + 'px';
+            ring.style.left = (cx - sz / 2) + 'px';
+            ring.style.top = (cy - sz / 2) + 'px';
+            document.body.appendChild(ring);
+            
+            const colors = {
+                rose: ['#ffe0e8', '#ffd0dc', '#ffc0d0', '#ffb0c4'],
+                sky: ['#d8f0ff', '#c8e8ff', '#b8e0ff', '#a8d8ff'],
+                mint: ['#d8ffe8', '#c8f0d8', '#b8e8c8', '#a8e0b8'],
+                lavender: ['#f0e8ff', '#e8d8ff', '#e0c8f8', '#d8b8f8'],
+                peach: ['#fff0e0', '#ffe8d0', '#ffe0c0', '#ffd8b0'],
+                lemon: ['#fff8d8', '#fff5c8', '#fff2b8', '#ffefA8']
+            };
+            
+            const particleColors = colors[bubble.color] || colors.rose;
+            
+            for (let i = 0; i < 20; i++) {
+                const p = document.createElement('div');
+                p.className = 'particle';
+                const pSize = 4 + Math.random() * 14;
+                const angle = (Math.PI * 2 / 20) * i + Math.random() * 0.5;
+                const vel = 40 + Math.random() * 90;
+                
+                p.style.width = pSize + 'px';
+                p.style.height = pSize + 'px';
+                p.style.background = particleColors[Math.floor(Math.random() * particleColors.length)];
+                p.style.left = (cx - pSize / 2) + 'px';
+                p.style.top = (cy - pSize / 2) + 'px';
+                p.style.transition = 'all 0.45s cubic-bezier(0.15, 0.5, 0.25, 0.85)';
+                p.style.boxShadow = `0 2px 6px rgba(0,0,0,0.08)`;
+                
+                document.body.appendChild(p);
+                requestAnimationFrame(() => {
+                    p.style.transform = `translate(${Math.cos(angle) * vel}px, ${Math.sin(angle) * vel}px) scale(0.2)`;
+                    p.style.opacity = '0';
+                });
+                setTimeout(() => p.remove(), 450);
+            }
+            
+            for (let i = 0; i < 5; i++) {
+                const d = document.createElement('div');
+                d.className = 'particle';
+                const dSize = 7 + Math.random() * 14;
+                const angle = Math.PI / 2 + (Math.random() - 0.5) * Math.PI * 0.85;
+                const vel = 70 + Math.random() * 70;
+                
+                d.style.width = dSize + 'px';
+                d.style.height = dSize + 'px';
+                d.style.background = `radial-gradient(circle at 30% 30%, rgba(255,255,255,0.95), ${particleColors[0]})`;
+                d.style.left = (cx - dSize / 2) + 'px';
+                d.style.top = (cy - dSize / 2) + 'px';
+                d.style.transition = 'all 0.55s cubic-bezier(0.15, 0.5, 0.25, 0.85)';
+                d.style.boxShadow = `0 3px 10px rgba(0,0,0,0.1)`;
+                
+                document.body.appendChild(d);
+                requestAnimationFrame(() => {
+                    d.style.transform = `translate(${Math.cos(angle) * vel}px, ${Math.sin(angle) * vel + 50}px)`;
+                    d.style.opacity = '0';
+                });
+                setTimeout(() => d.remove(), 550);
+            }
+            
+            setTimeout(() => ring.remove(), 400);
+        }
+        
+        // 简化音效 - 只保留低频"波"声，音量调高到0.25
+        function playPopSound() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const now = ctx.currentTime;
+                
+                // 低沉的 "波" 声 - 音量0.25
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                
+                osc.frequency.setValueAtTime(400, now);
+                osc.frequency.exponentialRampToValueAtTime(80, now + 0.08);
+                
+                gain.gain.setValueAtTime(0.25, now);  // 音量0.25
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+                
+                osc.type = 'triangle';
+                osc.start(now);
+                osc.stop(now + 0.08);
+                
+            } catch (e) {}
+        }
+        
+        function saveToLocal() {
+            try { 
+                localStorage.setItem('adhd_bubbles', JSON.stringify(state.bubbles)); 
+                localStorage.setItem('adhd_tutorial_complete', state.tutorialComplete);
+            } catch (e) {}
+        }
+        
+        function loadFromLocal() {
+            try {
+                const saved = localStorage.getItem('adhd_bubbles');
+                const tutorialDone = localStorage.getItem('adhd_tutorial_complete');
+                
+                if (tutorialDone === 'true') {
+                    state.tutorialComplete = true;
+                }
+                
+                if (saved) {
+                    JSON.parse(saved).forEach(b => {
+                        if (b.floatDuration === undefined) {
+                            b.floatDuration = getRandomFloatDuration();
+                            b.floatDelay = getRandomFloatDelay();
+                        }
+                        state.bubbles.push(b);
+                        renderBubble(b);
+                    });
+                    updateCount();
+                }
+            } catch (e) {}
+        }
+        
+        function openModal() {
+            if (state.bubbles.length >= state.maxBubbles) {
+                showToast('已达最大数量（5个）');
+                return;
+            }
+            elements.modalOverlay.classList.add('active');
+            elements.taskInput.value = '';
+            elements.taskInput.focus();
+        }
+        
+        function closeModal() {
+            elements.modalOverlay.classList.remove('active');
+            elements.sizeOptions.forEach((opt, i) => opt.classList.toggle('selected', i === 1));
+            state.selectedSize = 'medium';
+        }
+        
+        function confirmCreate() {
+            const label = elements.taskInput.value.trim();
+            if (!label) { elements.taskInput.focus(); return; }
+            if (label.length > 5) { showToast('标签不能超过5个字'); return; }
+            createBubble(label, state.selectedSize);
+            closeModal();
+        }
+        
+        // ============ 教程系统 ============
+        
+        function checkAndStartTutorial() {
+            // 如果没有完成任务，且没有现有泡泡，显示教程
+            if (!state.tutorialComplete && state.bubbles.length === 0) {
+                startTutorialStep0();
+            } else {
+                // 确保封面泡泡显示
+                updateCoverBubbles(state.bubbles.length > 0);
+            }
+        }
+        
+        function startTutorialStep0() {
+            elements.tutorialOverlay.classList.add('active');
+            elements.tutorialIcon.textContent = '🎈';
+            elements.tutorialTitle.textContent = '欢迎使用任务泡泡';
+            elements.tutorialText.textContent = '这是一个轻松有趣的任务管理工具，点击下方按钮开始创建你的第一个任务泡泡吧！';
+            elements.tutorialPrimaryBtn.textContent = '创建泡泡';
+            state.tutorialStep = 0;
+        }
+        
+        function startTutorialStep1() {
+            // 先隐藏欢迎框
+            elements.tutorialOverlay.classList.remove('active');
+            
+            // 预填测试标签
+            elements.taskInput.value = '测试任务';
+            
+            state.tutorialStep = 1;
+            
+            // 打开模态框
+            elements.modalOverlay.classList.add('active');
+            elements.taskInput.focus();
+            
+            // 点击确认按钮时自动创建泡泡
+            elements.confirmBtn.onclick = function() {
+                const label = elements.taskInput.value.trim();
+                if (!label) return;
+                closeModal();
+                createBubble(label, state.selectedSize, undefined, undefined, undefined, true);
+                
+                // 重置按钮事件
+                elements.confirmBtn.onclick = confirmCreate;
+                
+                // 延迟进入步骤2
+                setTimeout(() => startTutorialStep2(), 600);
+            };
+        }
+        
+        function startTutorialStep2() {
+            // 隐藏教程覆盖层
+            elements.tutorialOverlay.classList.remove('active');
+            
+            // 等待泡泡创建完成
+            setTimeout(() => {
+                const bubble = document.querySelector('.bubble');
+                if (bubble) {
+                    const rect = bubble.getBoundingClientRect();
+                    elements.tutorialHighlight.style.display = 'block';
+                    elements.tutorialHighlight.style.left = (rect.left - 10) + 'px';
+                    elements.tutorialHighlight.style.top = (rect.top - 40) + 'px';
+                    elements.tutorialHighlight.style.width = (rect.width + 20) + 'px';
+                    elements.tutorialHighlight.style.height = (rect.height + 60) + 'px';
+                    elements.tutorialHighlight.setAttribute('data-tip', '双击戳破泡泡');
+                    
+                    // 显示步骤指示
+                    elements.tutorialStep.style.display = 'flex';
+                    elements.tutorialStep.querySelectorAll('.tutorial-step-dot')[0].classList.remove('active');
+                    elements.tutorialStep.querySelectorAll('.tutorial-step-dot')[1].classList.add('active');
+                    
+                    state.tutorialStep = 2;
+                    
+                    // 3秒后如果用户还没双击，显示文字提示
+                    setTimeout(() => {
+                        if (state.tutorialStep === 2) {
+                            showToast('双击泡泡可以戳破它~');
+                        }
+                    }, 3000);
+                }
+            }, 300);
+        }
+        
+        function finishTutorial() {
+            elements.tutorialHighlight.style.display = 'none';
+            elements.tutorialStep.style.display = 'none';
+            
+            // 显示完成提示
+            elements.tutorialOverlay.classList.add('active');
+            elements.tutorialIcon.textContent = '✨';
+            elements.tutorialTitle.textContent = '太棒了！';
+            elements.tutorialText.textContent = '你已经学会了基本操作！现在可以开始使用任务泡泡来管理你的任务啦~';
+            elements.tutorialPrimaryBtn.textContent = '开始使用';
+            elements.tutorialSkipBtn.style.display = 'none';
+            
+            state.tutorialStep = 3;
+        }
+        
+        function skipTutorial() {
+            elements.tutorialOverlay.classList.remove('active');
+            state.tutorialComplete = true;
+            saveToLocal();
+            
+            // 清理教程相关元素
+            elements.tutorialHighlight.style.display = 'none';
+            elements.tutorialStep.style.display = 'none';
+            
+            // 确保封面泡泡显示
+            updateCoverBubbles(state.bubbles.length > 0);
+        }
+        
+        // 教程按钮事件
+        elements.tutorialPrimaryBtn.addEventListener('click', () => {
+            if (state.tutorialStep === 0) {
+                startTutorialStep1();
+            } else if (state.tutorialStep === 3) {
+                elements.tutorialOverlay.classList.remove('active');
+                state.tutorialComplete = true;
+                saveToLocal();
+            }
+        });
+        
+        elements.tutorialSkipBtn.addEventListener('click', skipTutorial);
+        
+        // 事件
+        elements.addBtn.addEventListener('click', () => {
+            // 如果在教程中，隐藏高亮
+            if (state.tutorialStep === 1) {
+                elements.tutorialHighlight.style.display = 'none';
+            }
+            openModal();
+        });
+        
+        elements.cancelBtn.addEventListener('click', closeModal);
+        elements.confirmBtn.addEventListener('click', confirmCreate);
+        elements.taskInput.addEventListener('keypress', e => { if (e.key === 'Enter') confirmCreate(); });
+        elements.modalOverlay.addEventListener('click', e => { if (e.target === elements.modalOverlay) closeModal(); });
+        
+        elements.sizeOptions.forEach(opt => {
+            opt.addEventListener('click', () => {
+                elements.sizeOptions.forEach(o => o.classList.remove('selected'));
+                opt.classList.add('selected');
+                state.selectedSize = opt.dataset.size;
+            });
+        });
+        
+        elements.settingsBtn.addEventListener('click', e => {
+            e.stopPropagation();
+            elements.settingsPanel.classList.toggle('active');
+        });
+        
+        document.addEventListener('click', e => {
+            if (!elements.settingsPanel.contains(e.target) && e.target !== elements.settingsBtn) {
+                elements.settingsPanel.classList.remove('active');
+            }
+        });
+        
+        elements.soundToggle.addEventListener('click', () => {
+            state.soundEnabled = !state.soundEnabled;
+            elements.soundToggle.classList.toggle('active', state.soundEnabled);
+        });
+        
+        document.addEventListener('click', e => {
+            if (!e.target.closest('.bubble') && !e.target.closest('.add-btn') && !e.target.closest('.modal-overlay') && !e.target.closest('.settings-panel')) {
+                document.querySelectorAll('.bubble.expanded').forEach(b => b.classList.remove('expanded'));
+            }
+        });
+        
+        // 初始化
+        loadFromLocal();
+        
+        // 延迟检查教程，确保DOM完全加载
+        setTimeout(() => {
+            checkAndStartTutorial();
+        }, 100);
+    </script>
+</body>
+</html>
