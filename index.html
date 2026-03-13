@@ -324,28 +324,28 @@
             transform: scale(1.05) !important;
         }
         
-        /* 泡泡尺寸 */
+        /* 泡泡尺寸 - 扩大150% */
         .bubble.size-small {
-            width: 14vmin;
-            height: 14vmin;
-            min-width: 55px;
-            min-height: 55px;
+            width: 21vmin;
+            height: 21vmin;
+            min-width: 82px;
+            min-height: 82px;
         }
         
         .bubble.size-medium {
-            width: 20vmin;
-            height: 20vmin;
-            min-width: 85px;
-            min-height: 85px;
+            width: 30vmin;
+            height: 30vmin;
+            min-width: 128px;
+            min-height: 128px;
         }
         
         .bubble.size-large {
-            width: 28vmin;
-            height: 28vmin;
-            min-width: 130px;
-            min-height: 130px;
-            max-width: 250px;
-            max-height: 250px;
+            width: 42vmin;
+            height: 42vmin;
+            min-width: 195px;
+            min-height: 195px;
+            max-width: 375px;
+            max-height: 375px;
         }
         
         /* 泡泡基础 */
@@ -608,10 +608,10 @@
             animation-delay: var(--cover-delay, 0s);
         }
         
-        /* 封面泡泡尺寸 */
-        .cover-bubble.size-small { width: 50px; height: 50px; }
-        .cover-bubble.size-medium { width: 70px; height: 70px; }
-        .cover-bubble.size-large { width: 90px; height: 90px; }
+        /* 封面泡泡尺寸 - 扩大150% */
+        .cover-bubble.size-small { width: 75px; height: 75px; }
+        .cover-bubble.size-medium { width: 105px; height: 105px; }
+        .cover-bubble.size-large { width: 135px; height: 135px; }
         
         /* 封面泡泡样式 */
         .cover-bubble::before {
@@ -1058,9 +1058,9 @@
         
         function getBubbleSizePx(size) {
             const vmin = Math.min(window.innerWidth, window.innerHeight) / 100;
-            const sizes = { small: 14, medium: 20, large: 28 };
-            const minSizes = { small: 55, medium: 85, large: 130 };
-            const maxSizes = { small: 80, medium: 140, large: 250 };
+            const sizes = { small: 21, medium: 30, large: 42 };
+            const minSizes = { small: 82, medium: 128, large: 195 };
+            const maxSizes = { small: 120, medium: 210, large: 375 };
             let sizePx = sizes[size] * vmin;
             return Math.max(minSizes[size], Math.min(maxSizes[size], sizePx));
         }
@@ -1088,7 +1088,7 @@
             const padding = 80;
             const sizes = ['size-small', 'size-medium', 'size-large'];
             const sizeName = sizes[Math.floor(Math.random() * sizes.length)];
-            const sizesMap = { 'size-small': 50, 'size-medium': 70, 'size-large': 90 };
+            const sizesMap = { 'size-small': 75, 'size-medium': 105, 'size-large': 135 };
             const size = sizesMap[sizeName];
             
             return {
