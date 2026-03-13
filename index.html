@@ -1544,6 +1544,19 @@
             state.tutorialStep = 0;
         }
         
+        // 教程模式的确认创建函数
+        let tutorialMode = false;
+        
+        function tutorialConfirmCreate() {
+            const label = elements.taskInput.value.trim();
+            if (!label) return;
+            closeModal();
+            createBubble(label, state.selectedSize, undefined, undefined, undefined, true);
+            tutorialMode = false;
+            // 延迟进入步骤2
+            setTimeout(() => startTutorialStep2(), 600);
+        }
+        
         function startTutorialStep1() {
             // 先隐藏欢迎框
             elements.tutorialOverlay.classList.remove('active');
@@ -1552,24 +1565,11 @@
             elements.taskInput.value = '测试任务';
             
             state.tutorialStep = 1;
+            tutorialMode = true;
             
             // 打开模态框
             elements.modalOverlay.classList.add('active');
             elements.taskInput.focus();
-            
-            // 点击确认按钮时自动创建泡泡
-            elements.confirmBtn.onclick = function() {
-                const label = elements.taskInput.value.trim();
-                if (!label) return;
-                closeModal();
-                createBubble(label, state.selectedSize, undefined, undefined, undefined, true);
-                
-                // 重置按钮事件
-                elements.confirmBtn.onclick = confirmCreate;
-                
-                // 延迟进入步骤2
-                setTimeout(() => startTutorialStep2(), 600);
-            };
         }
         
         function startTutorialStep2() {
@@ -1656,7 +1656,13 @@
         });
         
         elements.cancelBtn.addEventListener('click', closeModal);
-        elements.confirmBtn.addEventListener('click', confirmCreate);
+        elements.confirmBtn.addEventListener('click', () => {
+            if (tutorialMode) {
+                tutorialConfirmCreate();
+            } else {
+                confirmCreate();
+            }
+        });
         elements.taskInput.addEventListener('keypress', e => { if (e.key === 'Enter') confirmCreate(); });
         elements.modalOverlay.addEventListener('click', e => { if (e.target === elements.modalOverlay) closeModal(); });
         
