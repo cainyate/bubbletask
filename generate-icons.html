@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>图标生成器</title>
+<style>
+  body { font-family: sans-serif; padding: 30px; background: #f0f4f8; }
+  h2 { margin-bottom: 20px; }
+  .grid { display: flex; flex-wrap: wrap; gap: 20px; margin: 20px 0; }
+  .icon-box { text-align: center; }
+  canvas { border-radius: 20%; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+  button { margin: 5px; padding: 8px 16px; background: #4a90d9; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 13px; }
+  button:hover { background: #357abd; }
+  .dl-all { font-size: 16px; padding: 12px 28px; background: #27ae60; margin: 10px 0; }
+  .status { color: #27ae60; font-weight: bold; margin: 10px 0; }
+</style>
+</head>
+<body>
+<h2>🫧 任务泡泡 - 图标生成器</h2>
+<p>点击「一键下载全部」即可获得所有尺寸图标，保存到项目文件夹。</p>
+<br>
+<button class="dl-all" onclick="downloadAll()">⬇️ 一键下载全部图标</button>
+<div id="status" class="status"></div>
+<div class="grid" id="grid"></div>
+
+<script>
+const sizes = [72, 96, 128, 144, 152, 192, 384, 512];
+
+function drawIcon(size) {
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  const s = size;
+
+  // 背景
+  const bgGrad = ctx.createRadialGradient(s*0.4, s*0.35, 0, s*0.5, s*0.5, s*0.65);
+  bgGrad.addColorStop(0, '#f5fafc');
+  bgGrad.addColorStop(1, '#b8ddf0');
+  const r = s * 0.18;
+  ctx.beginPath();
+  ctx.moveTo(r, 0);
+  ctx.lineTo(s - r, 0);
+  ctx.quadraticCurveTo(s, 0, s, r);
+  ctx.lineTo(s, s - r);
+  ctx.quadraticCurveTo(s, s, s - r, s);
+  ctx.lineTo(r, s);
+  ctx.quadraticCurveTo(0, s, 0, s - r);
+  ctx.lineTo(0, r);
+  ctx.quadraticCurveTo(0, 0, r, 0);
+  ctx.closePath();
+  ctx.fillStyle = bgGrad;
+  ctx.fill();
+
+  // 大泡泡（蓝色，中心偏下）
+  drawBubble(ctx, s*0.5, s*0.56, s*0.26, '#b8dff5', '#7ec8e8');
+  // 中泡泡（紫色，左上）
+  drawBubble(ctx, s*0.25, s*0.35, s*0.15, '#d4b8f5', '#a87edc');
+  // 小泡泡（绿色，右上）
+  drawBubble(ctx, s*0.73, s*0.3, s*0.1, '#b8f5d8', '#7edcaa');
+
+  // 文字
+  if (size >= 128) {
+    ctx.fillStyle = '#4a7a9a';
+    ctx.font = `bold ${s*0.13}px "PingFang SC", "Microsoft YaHei", sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('任务泡泡', s*0.5, s*0.57);
+  }
+
+  return canvas;
+}
+
+function drawBubble(ctx, cx, cy, r, colorLight, colorDark) {
+  // 主体渐变
+  const grad = ctx.createRadialGradient(cx - r*0.3, cy - r*0.3, r*0.05, cx, cy, r);
+  grad.addColorStop(0, 'rgba(255,255,255,0.92)');
+  grad.addColorStop(0.5, colorLight + 'cc');
+  grad.addColorStop(1, colorDark + 'dd');
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.fillStyle = grad;
+  ctx.shadowColor = 'rgba(100,150,200,0.25)';
+  ctx.shadowBlur = r * 0.4;
+  ctx.fill();
+  ctx.shadowBlur = 0;
+
+  // 高光
+  ctx.beginPath();
+  ctx.arc(cx - r*0.28, cy - r*0.28, r*0.18, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(255,255,255,0.7)';
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(cx - r*0.15, cy - r*0.42, r*0.08, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  ctx.fill();
+}
+
+// 渲染预览
+const grid = document.getElementById('grid');
+sizes.forEach(size => {
+  const canvas = drawIcon(size);
+  canvas.style.width = Math.min(size, 128) + 'px';
+  canvas.style.height = Math.min(size, 128) + 'px';
+  const box = document.createElement('div');
+  box.className = 'icon-box';
+  box.innerHTML = `<div style="font-size:12px;color:#666;margin-bottom:6px">${size}×${size}</div>`;
+  box.appendChild(canvas);
+  const btn = document.createElement('button');
+  btn.textContent = '下载';
+  btn.onclick = () => downloadIcon(canvas, size);
+  box.appendChild(document.createElement('br'));
+  box.appendChild(btn);
+  grid.appendChild(box);
+});
+
+function downloadIcon(canvas, size) {
+  const a = document.createElement('a');
+  a.download = `icon-${size}x${size}.png`;
+  a.href = canvas.toDataURL('image/png');
+  a.click();
+}
+
+function downloadAll() {
+  const status = document.getElementById('status');
+  status.textContent = '正在下载...';
+  let i = 0;
+  function next() {
+    if (i >= sizes.length) {
+      status.textContent = `✅ 全部 ${sizes.length} 个图标下载完成！请将它们放入项目文件夹的 icons/ 目录。`;
+      return;
+    }
+    const canvas = drawIcon(sizes[i]);
+    downloadIcon(canvas, sizes[i]);
+    i++;
+    setTimeout(next, 300);
+  }
+  next();
+}
+</script>
+</body>
+</html>

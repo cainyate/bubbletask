@@ -2,8 +2,36 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>任务泡泡 - ADHD 友好任务工具</title>
+
+    <!-- PWA 核心配置 -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#7ec8e8">
+    <meta name="mobile-web-app-capable" content="yes">
+
+    <!-- iOS 全屏支持 -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="任务泡泡">
+    <link rel="apple-touch-icon" href="icons/icon-192x192.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="icons/icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="144x144" href="icons/icon-144x144.png">
+
+    <!-- 通用图标 -->
+    <link rel="icon" type="image/png" sizes="32x32" href="icons/icon-96x96.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192x192.png">
+
+    <!-- 描述和关键词（SEO + Google Play TWA 识别） -->
+    <meta name="description" content="ADHD 友好的可视化任务管理工具，用泡泡的方式管理你的任务">
+    <meta name="keywords" content="ADHD,任务管理,泡泡,专注,待办">
+    <meta name="author" content="任务泡泡">
+
+    <!-- 安全策略 -->
+    <meta name="referrer" content="no-referrer">
+
+    <!-- 多语言系统（先于主脚本加载） -->
+    <script src="i18n.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500&display=swap');
         
@@ -741,6 +769,21 @@
         }
         
         .settings-option label { font-size: 14px; color: #7a8896; }
+
+        /* 语言切换按钮 */
+        .lang-btn {
+            padding: 4px 10px;
+            border-radius: 20px;
+            border: 1.5px solid #ccdde8;
+            background: rgba(255,255,255,0.7);
+            color: #7a8896;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.18s ease;
+            font-family: inherit;
+        }
+        .lang-btn:hover { border-color: #7ec8e8; color: #4a8aaa; background: rgba(126,200,232,0.1); }
+        .lang-btn.active { background: linear-gradient(135deg, #7ec8e8, #a0d4f0); border-color: transparent; color: #fff; font-weight: 600; box-shadow: 0 2px 8px rgba(126,200,232,0.4); }
         
         .toggle {
             width: 48px;
@@ -960,11 +1003,11 @@
     <div id="coverBubbles"></div>
     
     <!-- 计数 -->
-    <div class="bubble-count">泡泡: <span id="count">0</span> / 5</div>
+    <div class="bubble-count"><span data-i18n="bubbleCount">泡泡</span>: <span id="count">0</span> / 5</div>
     
     <!-- 空状态提示 -->
     <div class="empty-hint" id="emptyHint">
-        <div class="hint-text">点击右下角 + 添加任务泡泡</div>
+        <div class="hint-text" data-i18n="hintEmpty">点击右下角 + 添加任务泡泡</div>
     </div>
     
     <!-- 设置按钮 -->
@@ -972,10 +1015,14 @@
     
     <!-- 设置面板 -->
     <div class="settings-panel" id="settingsPanel">
-        <h3>设置</h3>
+        <h3 data-i18n="settings">设置</h3>
         <div class="settings-option">
-            <label>完成音效</label>
+            <label data-i18n="soundEffect">完成音效</label>
             <div class="toggle active" id="soundToggle"></div>
+        </div>
+        <div class="settings-option" style="margin-top:12px; align-items:flex-start; flex-direction:column; gap:8px;">
+            <label data-i18n="langLabel" style="font-size:13px; color:#6a8090;">语言</label>
+            <div id="langSwitcher" style="display:flex; flex-wrap:wrap; gap:6px;"></div>
         </div>
     </div>
     
@@ -985,16 +1032,16 @@
     <!-- 创建模态框 -->
     <div class="modal-overlay" id="modalOverlay">
         <div class="modal">
-            <h2>创建新泡泡</h2>
-            <input type="text" class="modal-input" id="taskInput" placeholder="输入任务标签（≤5字）" maxlength="5">
+            <h2 data-i18n="modalTitle">创建新泡泡</h2>
+            <input type="text" class="modal-input" id="taskInput" data-i18n-placeholder="inputPlaceholder" placeholder="输入任务标签（≤5字）" maxlength="10">
             <div class="size-selector">
-                <div class="size-option" data-size="small"><span class="icon"></span><span class="label">小</span></div>
-                <div class="size-option selected" data-size="medium"><span class="icon"></span><span class="label">中</span></div>
-                <div class="size-option" data-size="large"><span class="icon"></span><span class="label">大</span></div>
+                <div class="size-option" data-size="small"><span class="icon"></span><span class="label" data-i18n="sizeSmall">小</span></div>
+                <div class="size-option selected" data-size="medium"><span class="icon"></span><span class="label" data-i18n="sizeMedium">中</span></div>
+                <div class="size-option" data-size="large"><span class="icon"></span><span class="label" data-i18n="sizeLarge">大</span></div>
             </div>
             <div class="modal-buttons">
-                <button class="modal-btn cancel" id="cancelBtn">取消</button>
-                <button class="modal-btn confirm" id="confirmBtn">创建</button>
+                <button class="modal-btn cancel" id="cancelBtn" data-i18n="cancel">取消</button>
+                <button class="modal-btn confirm" id="confirmBtn" data-i18n="create">创建</button>
             </div>
         </div>
     </div>
@@ -1007,7 +1054,7 @@
             <p id="tutorialText">这是一个轻松有趣的任务管理工具，点击按钮开始创建你的第一个任务泡泡吧！</p>
             <div>
                 <button class="tutorial-btn primary" id="tutorialPrimaryBtn">开始体验</button>
-                <button class="tutorial-btn secondary" id="tutorialSkipBtn">跳过</button>
+                <button class="tutorial-btn secondary" id="tutorialSkipBtn" data-i18n="tutorialSkip">跳过</button>
             </div>
         </div>
     </div>
@@ -1256,8 +1303,8 @@
                 <div class="bubble-reflection"></div>
                 <span class="bubble-label">${bubble.label}</span>
                 <div class="bubble-options">
-                    <button class="bubble-option-btn complete-btn" data-action="complete">完成</button>
-                    <button class="bubble-option-btn delete-btn" data-action="delete">删除</button>
+                    <button class="bubble-option-btn complete-btn" data-action="complete">${t('complete')}</button>
+                    <button class="bubble-option-btn delete-btn" data-action="delete">${t('delete')}</button>
                 </div>
             `;
             
@@ -1511,7 +1558,7 @@
         
         function openModal() {
             if (state.bubbles.length >= state.maxBubbles) {
-                showToast('已达最大数量（5个）');
+                showToast(t('toastMaxBubbles'));
                 return;
             }
             elements.modalOverlay.classList.add('active');
@@ -1528,7 +1575,7 @@
         function confirmCreate() {
             const label = elements.taskInput.value.trim();
             if (!label) { elements.taskInput.focus(); return; }
-            if (label.length > 5) { showToast('标签不能超过5个字'); return; }
+            if (label.length > 10) { showToast(t('toastLabelTooLong')); return; }
             createBubble(label, state.selectedSize);
             closeModal();
         }
@@ -1548,9 +1595,10 @@
         function startTutorialStep0() {
             elements.tutorialOverlay.classList.add('active');
             elements.tutorialIcon.textContent = '🎈';
-            elements.tutorialTitle.textContent = '欢迎使用任务泡泡';
-            elements.tutorialText.textContent = '这是一个轻松有趣的任务管理工具，点击下方按钮开始创建你的第一个任务泡泡吧！';
-            elements.tutorialPrimaryBtn.textContent = '创建泡泡';
+            elements.tutorialTitle.textContent = t('tutorialWelcomeTitle');
+            elements.tutorialText.textContent = t('tutorialWelcomeText');
+            elements.tutorialPrimaryBtn.textContent = t('tutorialWelcomeBtn');
+            elements.tutorialSkipBtn.textContent = t('tutorialSkip');
             state.tutorialStep = 0;
         }
         
@@ -1572,7 +1620,7 @@
             elements.tutorialOverlay.classList.remove('active');
             
             // 预填测试标签
-            elements.taskInput.value = '测试任务';
+            elements.taskInput.value = t('tutorialTestTask');
             
             state.tutorialStep = 1;
             tutorialMode = true;
@@ -1596,7 +1644,7 @@
                     elements.tutorialHighlight.style.top = (rect.top - 40) + 'px';
                     elements.tutorialHighlight.style.width = (rect.width + 20) + 'px';
                     elements.tutorialHighlight.style.height = (rect.height + 60) + 'px';
-                    elements.tutorialHighlight.setAttribute('data-tip', '双击戳破泡泡');
+                    elements.tutorialHighlight.setAttribute('data-tip', t('tutorialPopTip'));
                     
                     // 显示步骤指示
                     elements.tutorialStep.style.display = 'flex';
@@ -1608,7 +1656,7 @@
                     // 3秒后如果用户还没双击，显示文字提示
                     setTimeout(() => {
                         if (state.tutorialStep === 2) {
-                            showToast('双击泡泡可以戳破它~');
+                            showToast(t('tutorialPopToast'));
                         }
                     }, 3000);
                 }
@@ -1622,9 +1670,9 @@
             // 显示完成提示
             elements.tutorialOverlay.classList.add('active');
             elements.tutorialIcon.textContent = '✨';
-            elements.tutorialTitle.textContent = '太棒了！';
-            elements.tutorialText.textContent = '你已经学会了基本操作！现在可以开始使用任务泡泡来管理你的任务啦~';
-            elements.tutorialPrimaryBtn.textContent = '开始使用';
+            elements.tutorialTitle.textContent = t('tutorialDoneTitle');
+            elements.tutorialText.textContent = t('tutorialDoneText');
+            elements.tutorialPrimaryBtn.textContent = t('tutorialDoneBtn');
             elements.tutorialSkipBtn.style.display = 'none';
             
             state.tutorialStep = 3;
@@ -1705,14 +1753,84 @@
                 document.querySelectorAll('.bubble.expanded').forEach(b => b.classList.remove('expanded'));
             }
         });
-        
+
+        // ============ 语言切换 UI ============
+
+        const LANG_LABELS = {
+            'zh-CN': '中文',
+            'en':    'EN',
+            'ja':    '日本語',
+            'ko':    '한국어',
+            'es':    'ES',
+            'fr':    'FR',
+        };
+
+        function buildLangSwitcher() {
+            const container = document.getElementById('langSwitcher');
+            if (!container) return;
+            container.innerHTML = '';
+            Object.keys(LANG_LABELS).forEach(lang => {
+                const btn = document.createElement('button');
+                btn.textContent = LANG_LABELS[lang];
+                btn.className = 'lang-btn' + (lang === currentLang ? ' active' : '');
+                btn.setAttribute('data-lang', lang);
+                btn.addEventListener('click', () => {
+                    switchLanguage(lang);
+                    buildLangSwitcher(); // 刷新高亮
+                });
+                container.appendChild(btn);
+            });
+        }
+
+        // 切换语言时刷新所有动态文本
+        document.addEventListener('langchange', () => {
+            // 刷新气泡内按钮文字（重新渲染所有气泡）
+            document.querySelectorAll('.bubble').forEach(el => {
+                const completeBtn = el.querySelector('.complete-btn');
+                const deleteBtn   = el.querySelector('.delete-btn');
+                if (completeBtn) completeBtn.textContent = t('complete');
+                if (deleteBtn)   deleteBtn.textContent   = t('delete');
+            });
+            // 教程若正在显示则刷新文本
+            if (state.tutorialStep === 0) startTutorialStep0();
+        });
+
         // 初始化
+        buildLangSwitcher();
         loadFromLocal();
         
         // 延迟检查教程，确保DOM完全加载
         setTimeout(() => {
             checkAndStartTutorial();
         }, 100);
+    </script>
+
+    <!-- PWA Service Worker 注册 -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js', { scope: '/' })
+                    .then(reg => {
+                        console.log('[PWA] Service Worker 注册成功:', reg.scope);
+                        // 检查更新
+                        reg.addEventListener('updatefound', () => {
+                            const newWorker = reg.installing;
+                            newWorker.addEventListener('statechange', () => {
+                                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                    console.log('[PWA] 新版本可用，刷新页面更新');
+                                }
+                            });
+                        });
+                    })
+                    .catch(err => console.warn('[PWA] Service Worker 注册失败:', err));
+            });
+
+            // 处理快捷方式：?action=create 自动打开创建框
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('action') === 'create') {
+                window.addEventListener('load', () => setTimeout(() => openModal(), 500));
+            }
+        }
     </script>
 </body>
 </html>

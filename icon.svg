@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <radialGradient id="bgGrad" cx="40%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#f5fafc"/>
+      <stop offset="100%" stop-color="#b8ddf0"/>
+    </radialGradient>
+    <radialGradient id="bubble1" cx="35%" cy="30%" r="60%">
+      <stop offset="0%" stop-color="rgba(255,255,255,0.9)"/>
+      <stop offset="60%" stop-color="rgba(180,220,245,0.6)"/>
+      <stop offset="100%" stop-color="rgba(130,190,230,0.8)"/>
+    </radialGradient>
+    <radialGradient id="bubble2" cx="35%" cy="30%" r="60%">
+      <stop offset="0%" stop-color="rgba(255,255,255,0.9)"/>
+      <stop offset="60%" stop-color="rgba(210,190,245,0.6)"/>
+      <stop offset="100%" stop-color="rgba(170,140,225,0.8)"/>
+    </radialGradient>
+    <radialGradient id="bubble3" cx="35%" cy="30%" r="60%">
+      <stop offset="0%" stop-color="rgba(255,255,255,0.9)"/>
+      <stop offset="60%" stop-color="rgba(180,240,210,0.6)"/>
+      <stop offset="100%" stop-color="rgba(120,200,160,0.8)"/>
+    </radialGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="rgba(100,150,200,0.3)"/>
+    </filter>
+  </defs>
+  <!-- 背景圆形 -->
+  <rect width="512" height="512" rx="100" fill="url(#bgGrad)"/>
+  <!-- 大泡泡（中心） -->
+  <circle cx="256" cy="270" r="130" fill="url(#bubble1)" filter="url(#shadow)" opacity="0.92"/>
+  <circle cx="220" cy="230" r="18" fill="rgba(255,255,255,0.7)"/>
+  <circle cx="245" cy="215" r="9" fill="rgba(255,255,255,0.5)"/>
+  <!-- 中泡泡（左上） -->
+  <circle cx="130" cy="180" r="75" fill="url(#bubble2)" filter="url(#shadow)" opacity="0.88"/>
+  <circle cx="110" cy="158" r="10" fill="rgba(255,255,255,0.7)"/>
+  <!-- 小泡泡（右上） -->
+  <circle cx="370" cy="155" r="50" fill="url(#bubble3)" filter="url(#shadow)" opacity="0.88"/>
+  <circle cx="355" cy="138" r="7" fill="rgba(255,255,255,0.7)"/>
+  <!-- 文字 -->
+  <text x="256" y="282" text-anchor="middle" font-family="sans-serif" font-size="48" font-weight="700" fill="#5a7a8a" opacity="0.9">任务</text>
+</svg>
